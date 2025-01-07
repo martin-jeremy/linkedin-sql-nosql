@@ -94,11 +94,16 @@ Python', 80.00, 3);")
 
 
 def main():
-    print("Hello from linkedin-sql-nosql!")
-    if os.path.exists("data/duckdb_shop.db"):
-        os.remove("data/duckdb_shop.db")
-    init_db("data/duckdb_shop.db")
-    fill_db("data/duckdb_shop.db")
+    # Paths
+    duckdb_path = "data/duckdb_shop.db"
+
+    # Reset database
+    if os.path.exists(duckdb_path):
+        os.remove(duckdb_path)
+
+    # Init and fill
+    init_db(duckdb_path)
+    fill_db(duckdb_path)
 
 
 if __name__ == "__main__":
