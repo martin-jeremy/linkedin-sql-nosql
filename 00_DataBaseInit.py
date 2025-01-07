@@ -1,3 +1,5 @@
+import os
+
 import duckdb as db
 
 def init_db(path: str):
@@ -29,17 +31,65 @@ CREATE TABLE IF NOT EXISTS Products (
     con.execute("""
 CREATE TABLE IF NOT EXISTS Sales (
   id INTEGER PRIMARY KEY,
+  date DATE
+);
+""")
+
+    # SaleDetails table
+    con.execute("""
+CREATE TABLE IF NOT EXISTS SaleDetails (
+  id INTEGER PRIMARY KEY,
   sale_id INTEGER,
   product_id INTEGER,
   quantity INTEGER,
-  sale_date DATE,
+  FOREIGN KEY(sale_id) REFERENCES Sales(id),
   FOREIGN KEY(product_id) REFERENCES Products(id)
 );
 """)
 
+    # Close
+    con.close()
+
+
+def fill_db(path: str):
+    con = db.connect(path)
+
+    # Fill Categories
+    con.execute("INSERT INTO Categories VALUES (1, 'Electronics', 'Electronic devices and gadgets');")
+    con.execute("INSERT INTO Categories VALUES (2, 'Furniture', 'Furniture and home decor');")
+    con.execute("INSERT INTO Categories VALUES (3, 'Books', 'Books and literature');")
+
+    # Fill Products
+    con.execute("INSERT INTO Products VALUES (1, 'Laptop', 'A high-end gaming laptop', 1500.00, 1);")
+    con.execute("INSERT INTO Products VALUES (2, 'Mouse', 'A new-gen gaming mouse', 100.00, 1);")
+    con.execute("INSERT INTO Products VALUES (3, 'Headphones', 'Noise-cancelling headphones', 150.00, 1);")
+    con.execute("INSERT INTO Products VALUES (4, 'Keyboard', 'Mechanical keyboard', 120.00, 1);")
+    con.execute("INSERT INTO Products VALUES (5, 'Chair', 'Ergonomic office chair', 200.00, 2);")
+    con.execute("INSERT INTO Products VALUES (6, 'Desk', 'Wooden desk with drawers', 300.00, 2);")
+    con.execute("INSERT INTO Products VALUES (7, 'Lamp', 'LED desk lamp', 50.00, 2);")
+    con.execute("INSERT INTO Products VALUES (8, 'Novel', 'A best-selling novel', 15.00, 3);")
+    con.execute("INSERT INTO Products VALUES (9, 'Magazine', 'Monthly fashion magazine', 5.00, 3);")
+    con.execute("INSERT INTO Products VALUES (10, 'Data Cookbook', 'A comprehensive How-To Guide to deals on data with Python', 80.00, 3);")
+
+    # Fill Sales
+    con.execute("INSERT INTO Sales VALUES (1, '2025-01-03');")
+    con.execute("INSERT INTO Sales VALUES (2, '2025-01-03');")
+    con.execute("INSERT INTO Sales VALUES (3, '2025-01-04');")
+    con.execute("INSERT INTO Sales VALUES (4, '2025-01-06');")
+    con.execute("INSERT INTO Sales VALUES (5, '2025-01-07');")
+
+
+    # Fill SaleDetails //TODO
+
+    con.close()
+
+
 def main():
     print("Hello from linkedin-sql-nosql!")
+    if os.path.exists("data/shop.db"):
+        os.remove("data/shop.db")
     init_db("data/shop.db")
+    fill_db("data/shop.db")
 
 
 if __name__ == "__main__":
