@@ -1,6 +1,14 @@
 import os
+import random
 import duckdb as db
+from faker import Faker
+from datetime import datetime
 
+fake = Faker()
+
+def sale_date() -> str:
+    date = fake.date_between(datetime(2024, 1, 1), datetime(2024, 12, 31))
+    return date.strftime("%Y-%m-%d")
 
 def init_db(path: str):
     # Persistent DB
@@ -71,24 +79,29 @@ def fill_db(path: str):
     con.execute("INSERT INTO Products VALUES (9, 'Magazine', 'Monthly fashion magazine', 5.00, 3);")
     con.execute("INSERT INTO Products VALUES (10, 'Data Cookbook', 'A comprehensive How-To Guide to deals on data with \
 Python', 80.00, 3);")
+    con.execute("INSERT INTO Products VALUES (11, 'Couch', 'Comfortable two-seat couch', 500.00, 2);")
+    con.execute(
+        "INSERT INTO Products VALUES (12, 'Filing Cabinet', 'Metal filing cabinet with three drawers', 120.00, 2);")
+    con.execute("INSERT INTO Products VALUES (13, 'Whiteboard', 'Magnetic whiteboard with markers', 60.00, 2);")
+    con.execute(
+        "INSERT INTO Products VALUES (14, 'Science Magazine', 'Monthly scientific discoveries magazine', 7.00, 3);")
+    con.execute(
+        "INSERT INTO Products VALUES (15, 'Cooking Guide', 'Step-by-step cooking recipes from top chefs', 40.00, 3);")
 
     # Fill Sales
-    con.execute("INSERT INTO Sales VALUES (1, '2025-01-03');")
-    con.execute("INSERT INTO Sales VALUES (2, '2025-01-03');")
-    con.execute("INSERT INTO Sales VALUES (3, '2025-01-04');")
-    con.execute("INSERT INTO Sales VALUES (4, '2025-01-06');")
-    con.execute("INSERT INTO Sales VALUES (5, '2025-01-07');")
+    sales_date = [sale_date() for _ in range(500)]
+    sales_date.sort()
+    for sale_id, date in enumerate(sales_date):
+        con.execute(f"INSERT INTO Sales VALUES ({sale_id+1}, '{date}')")
 
     # Fill SaleDetails
-    con.execute("INSERT INTO SaleDetails VALUES (1, 1, 1, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (2, 1, 2, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (3, 1, 3, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (4, 2, 4, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (5, 3, 8, 3);")
-    con.execute("INSERT INTO SaleDetails VALUES (6, 3, 9, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (7, 4, 6, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (8, 5, 5, 1);")
-    con.execute("INSERT INTO SaleDetails VALUES (9, 5, 7, 1);")
+    ticket_id = list(range(1,501)) + [random.randint(1,500) for _ in range(1500)]
+    ticket_id.sort()
+
+    for i, sale_id in enumerate(ticket_id):
+        prod = random.randint(1, 15)
+        quant = random.choices([_ for _ in range(1, 6)], weights=[5000, 1000, 100, 10, 1], k=1)[0]
+        con.execute(f"INSERT INTO SaleDetails VALUES ({i}, {sale_id}, {prod}, {quant})")
 
     con.close()
 

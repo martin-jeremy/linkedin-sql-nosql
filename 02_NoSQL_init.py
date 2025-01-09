@@ -27,22 +27,32 @@ def convert_db(database) -> {}:
             "sales": {}
         }
 
-    # Add sales to products
-    for sale_id, product_id, quantity in sale_details:
-        # Find product details
-        product = next(prod for prod in products if prod[0] == product_id)
-        product_name = product[1]
-        category_id = product[4]
+    # Add sales to products, sorted by date
+    for product_id, product_name, product_description, product_price, category_id in products:
+        # Find the category name
         category_name = next(cat[1] for cat in categories if cat[0] == category_id)
 
-        # Find sale date
-        sale_date = next(sale[1] for sale in sales if sale[0] == sale_id)
+        # Filter and sort sale details for this product
+        product_sales = [
+            (sale_id, quantity, next(sale[1] for sale in sales if sale[0] == sale_id))
+            for sale_id, prod_id, quantity in sale_details
+            if prod_id == product_id
+        ]
+        # Sort by sale date
+        product_sales.sort(key=lambda x: x[2])
 
-        # Add sale information
-        json["Categories"][category_name][product_name]["sales"][sale_id] = {
-            "ticket": sale_id,
-            "date": sale_date.strftime("%Y-%m-%d"),
-            "quantity": quantity
+        # Add sorted sales to the product
+        json["Categories"][category_name][product_name] = {
+            "description": product_description,
+            "price": product_price,
+            "sales": {
+                idx + 1: {  # Use an ascending integer index for keys
+                    "ticket": sale_id,
+                    "date": sale_date.strftime("%Y-%m-%d"),
+                    "quantity": quantity,
+                }
+                for idx, (sale_id, quantity, sale_date) in enumerate(product_sales)
+            },
         }
 
     return json
