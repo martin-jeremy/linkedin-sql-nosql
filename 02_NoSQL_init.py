@@ -3,7 +3,21 @@ from tinydb import TinyDB
 import os
 
 
-def convert_db(database) -> {}:
+def convert_to_relational_json(database) -> {}:
+    # Query DuckDB to fetch relational data
+    categories = database.execute("SELECT id, name, description FROM Categories").fetchdf()
+    products = database.execute("SELECT id, name, description, price, category_id FROM Products").fetchdf()
+    sales = database.execute("SELECT id, date FROM Sales").fetchdf()
+    sale_details = database.execute("SELECT id, sale_id, product_id, quantity FROM SaleDetails").fetchdf()
+    sales['date'] = sales['date'].apply(func=lambda str_date: str_date.strftime("%Y-%m-%d"))
+
+    json = {"Categories": categories.set_index('id').to_dict(orient='index'),
+            "Products": products.set_index('id').to_dict(orient='index'),
+            "Sales": sales.set_index('id').to_dict(orient='index'),
+            "SaleDetails": sale_details.set_index('id').to_dict(orient='index')}
+    return json
+
+def convert_to_hierarchical_json(database) -> {}:
     # Query DuckDB to fetch relational data
     categories = database.execute("SELECT id, name, description FROM Categories").fetchall()
     products = database.execute("SELECT id, name, description, price, category_id FROM Products").fetchall()
@@ -61,25 +75,39 @@ def convert_db(database) -> {}:
 def main():
     # Paths
     duckdb_path = "data/duckdb_shop.db"
-    tinydb_path = "data/tinydb_shop.json"
+    hierarchical_tinydb_path = "data/hierarchical_tinydb_shop.json"
+    relational_tinydb_path = "data/relational_tinydb_shop.json"
 
     # Reset TinyDB
-    if os.path.exists(tinydb_path):
-        os.remove(tinydb_path)
+    if os.path.exists(hierarchical_tinydb_path):
+        os.remove(hierarchical_tinydb_path)
+    if os.path.exists(relational_tinydb_path):
+        os.remove(relational_tinydb_path)
 
     # Connect to DuckDB
     con = duckdb.connect(duckdb_path)
-    tinydb = TinyDB(tinydb_path)
+    hierarchical_tinydb = TinyDB(hierarchical_tinydb_path)
+    relational_tinydb = TinyDB(relational_tinydb_path)
 
     # Convert
-    data = convert_db(con)
+    hierarchical_data = convert_to_hierarchical_json(con)
+    relational_data = convert_to_relational_json(con)
 
     # Insert into TinyDB
-    tinydb.insert(data)
+    hierarchical_tinydb.insert(hierarchical_data)
+    for table_name, records in relational_data.items():
+        # Get or create the TinyDB table
+        tmp_table = relational_tinydb.table(table_name)
+
+        # Insert records into the table
+        for record_id, record_value in records.items():
+            # Insert with explicit id and unpack the rest of the fields
+            tmp_table.insert({**record_value})
 
     # Close connections
     con.close()
-    tinydb.close()
+    hierarchical_tinydb.close()
+    relational_tinydb.close()
 
 
 if __name__ == "__main__":
