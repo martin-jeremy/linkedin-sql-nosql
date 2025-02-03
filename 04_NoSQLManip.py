@@ -156,8 +156,25 @@ def get_product_sales_by_month(db, product_name: str, year: int, month: int):
 
 def get_hierarchical_sales_summary(db):
     """
-    Equivalent to SQL ROLLUP query:
     Shows total quantities sold for each product and category
+    Equivalent to SQL UNION query:
+    SELECT
+          cat.name AS Type
+          , COALESCE(SUM(sd.quantity), 0) AS Quantity
+        FROM Categories cat
+        LEFT JOIN Products pd ON cat.id = pd.category_id
+        LEFT JOIN SaleDetails sd ON pd.id = sd.product_id
+        GROUP BY Type
+
+        UNION
+
+        SELECT
+          pd.name AS Type
+          , COALESCE(SUM(sd.quantity), 0) AS Quantity
+        FROM Products pd
+        LEFT JOIN SaleDetails sd ON pd.id = sd.product_id
+        GROUP BY Type
+        ORDER BY Quantity DESC, Type
     """
     data = db.all()[0]
 
